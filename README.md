@@ -22,7 +22,7 @@ Para conseguir fazer uma gravação com mais de uma câmera, é essencial a **si
 
 Com dois vídeos sincronizados, o temos dois **skeletons** sincronizados, mas diferentes. Para avaliar os dados, é necessário unir (**interpolar**) estes dois skeletons em um só. Espera-se que este skeleton produto da soma seja mais preciso e consiga se manter consistente ao longo de todo o percurso útil da marcha.
 
-![kinect-setup-drawing](media/kinect-setup.png "setup dos Kinects e pista")
+![kinect-setup-drawing](media/kinect-setup-drawing.png "setup dos Kinects e pista")
 
 ![kinect-setup-real](media/kinect-setup-real.png "setup dos testes")
 
