@@ -130,7 +130,7 @@ tamTotal = 0                             # Tamanho da soma de todos os passos
 listaPontos = create_list(listaPontos)   # Criar a lista (matriz) com os pontos das juntas
 list_euclidiana(listaPontos)             # Criar a lista com as distâncias dos pontos anteriores
 
-lenEuclidiana = len(listaEuclidiana) - 1    # Tamanho da lista distancias
+lenEuclidiana = len(listaEuclidiana) - 1   # Tamanho da lista distancias
 
 # Criando a lista de distancias euclidianas, para todos os pontos
 for i in range(lenEuclidiana):
