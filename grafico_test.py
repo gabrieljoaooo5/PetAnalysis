@@ -1,7 +1,5 @@
-from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
 from scipy import signal
-import scipy.fftpack
 import numpy as np
 import math
 
@@ -12,12 +10,12 @@ def create_list(listaPontos):
     num_linhas = len(lista) - 1 # Numero de linhas lidas
 
     for i in range(num_linhas):
-        lista[i] = lista[i][0].split(' ') #Separa por espaço, para formar matriz
+        lista[i] = lista[i][0].split(' ') # Separa por espaço, para formar matriz
 
     tempoInicial = float(lista[0][6])
     for i in range(num_linhas):
         for j in range(6):
-            lista[i][j] = float(lista[i][j]) #Transforma em float
+            lista[i][j] = float(lista[i][j]) # Transforma em float
         lista[i][6] = float(lista[i][6]) - tempoInicial
         tempoAtual.append(lista[i][6])
 
@@ -25,8 +23,31 @@ def create_list(listaPontos):
 
     return lista
 
+def create_list2(ar, al, sb):
+    with open("C:\\Users\\VOXAR\\Documents\\BodyBasics-WPF\\joints.txt") as file:
+        for line in file:
+            line = line.split('\n')
+            line = line[0].split(' ')
+            linha = []
+            if (line[sb*6] == '2' and line[ar*6] == '2' and line[al*6] == '2'):
+                linha.append(line[ar*6 + 1])
+                linha.append(line[ar*6 + 3])
+                linha.append(line[al*6 + 1])
+                linha.append(line[al*6 + 3])
+                linha.append(line[sb*6 + 1])
+                linha.append(line[sb*6 + 3])
+
+            for i in range (len(linha)):
+                linha[i] = linha[i].replace(',', '.')
+                linha[i] = float(linha[i])
+
+            if (len(linha) == 6): 
+                listaPontos.append(linha)
+
+    file.close()
+
 def list_euclidiana(listaPontos):
-    num_linhas = len(listaPontos) - 1 
+    num_linhas = len(listaPontos)-1 
     for i in range(num_linhas):
         dist = distance(listaPontos[i][0], listaPontos[i][1], listaPontos[i][2], listaPontos[i][3])
         listaEuclidiana.append(dist)
@@ -63,78 +84,113 @@ def min_max_graph(listaDistance):
             listaIndice.append(i)
             qtdPassos += 1
 
+    i = 1
+    tamTotal = 0
+    for i in range(len(listaIndice)):
+        indice = listaIndice[i]
+        tamTotal += listaDistance[indice]
+
+    tamMedio = tamTotal/(len(listaIndice))
+    print(tamMedio)
+
+    i = 1
+    lista = []
+    for i in range(len(listaIndice)):
+        indice = listaIndice[i]
+        if(listaDistance[indice] < 0.80*tamMedio or listaDistance[indice] >= 1.45*tamMedio):
+            lista.append(i)
+
+    for i in range(len(lista)):
+        ind = listaIndice[lista[i]]
+        del(listaIndice[lista[i]])
+        j = i
+        for j in range(len(lista)):
+            lista[j] -= 1
+    
+    qtdPassos = len(listaIndice)
     print("quantidade de passos: %d" %qtdPassos)
     print(listaIndice)
 
 #  0  ,  1  ,  2  ,  3  ,  4  ,  5
 #AR_X, AR_Z, AL_X, AL_Z, SB_X, SB_Z (ordem)
-def tamanho_passo(listaAtual, listaProximo, flag):
+def tamanho_passo(listaAtual, listaProximo):
     #vetor[Z, X]
     #define o vetor entre dois SB (atual e proximo)
-    vetorReta = [listaProximo[5] - listaAtual[5], listaProximo[4]- listaAtual[4]]
+    AR_X_at = listaAtual[0]
+    AR_Z_at = listaAtual[1]
+    AL_X_at = listaAtual[2]
+    AL_Z_at = listaAtual[3]
+    SB_X_at = listaAtual[4]
+    SB_Z_at = listaAtual[5]
+
+    SB_X_prx = listaProximo[4]
+    SB_Z_prx = listaProximo[5]
+
+    distanciaPasso = 0
+    vetorReta = [SB_Z_prx - SB_Z_at, SB_X_prx- SB_X_at]
 
     #vetor[Z, X]
     #define o vetor que representara o pe atualmente na frente e atras
-    vetorPeDireito = [listaAtual[1]-listaAtual[5], listaAtual[0]-listaAtual[4]]
-    vetorPeEsquerdo = [listaAtual[3]-listaAtual[5], listaAtual[2]-listaAtual[4]]
+    vetorPeDireito = [AR_Z_at-SB_Z_at, AR_X_at-SB_X_at]
+    vetorPeEsquerdo = [AL_Z_at-SB_Z_at, AL_X_at-SB_X_at]
 
-    #projecao pe da frente sobre a reta da frente (spine base)
-    coef = ((vetorPeDireito[0]*vetorReta[0])+(vetorPeDireito[1]*vetorReta[1]))/((vetorReta[0]*vetorReta[0])+(vetorReta[1]*vetorReta[1]))
-    projDireito = [coef*vetorReta[0], coef*vetorReta[1]]        
-    distDireito = math.sqrt(projDireito[0]*projDireito[0] + projDireito[1]*projDireito[1])
+    if(vetorReta[0] != 0 or vetorReta[1] != 0):
+        #projecao pe direito sobre a reta da frente (spine base)
+        coef = ((vetorPeDireito[0]*vetorReta[0])+(vetorPeDireito[1]*vetorReta[1]))/((vetorReta[0]*vetorReta[0])+(vetorReta[1]*vetorReta[1]))
+        projDireito = [coef*vetorReta[0], coef*vetorReta[1]]        
+        distDireito = math.sqrt(projDireito[0]*projDireito[0] + projDireito[1]*projDireito[1])
 
-    #projecao do pe de tras sobre a reta de tras (spine base)
-    coef = ((vetorPeEsquerdo[0]*vetorReta[0])+(vetorPeEsquerdo[1]*vetorReta[1]))/((vetorReta[0]*vetorReta[0])+(vetorReta[1]*vetorReta[1]))
-    projEsquerdo = [coef*vetorReta[0], coef*vetorReta[1]]
-    distEsquerdo = math.sqrt(projEsquerdo[0]*projEsquerdo[0] + projEsquerdo[1]*projEsquerdo[1])
-    #print("coef2: %f\n"%coef)
+        #projecao do pe esquerdo sobre a reta da frente (spine base)
+        coef = ((vetorPeEsquerdo[0]*vetorReta[0])+(vetorPeEsquerdo[1]*vetorReta[1]))/((vetorReta[0]*vetorReta[0])+(vetorReta[1]*vetorReta[1]))
+        projEsquerdo = [coef*vetorReta[0], coef*vetorReta[1]]
+        distEsquerdo = math.sqrt(projEsquerdo[0]*projEsquerdo[0] + projEsquerdo[1]*projEsquerdo[1])
 
-    #o tamanho do passo = soma do tamanho dos dois passos
-    distanciaPasso = distDireito + distEsquerdo
+        #o tamanho do passo = soma do tamanho dos dois passos
+        distanciaPasso = distDireito + distEsquerdo
 
-    testeDistDireito = math.sqrt(math.pow((listaProximo[5]-projDireito[0]), 2) + math.pow(listaProximo[4]-projDireito[1], 2))
-    testeDistEsquerdo = math.sqrt(math.pow((listaProximo[5]-projEsquerdo[0]), 2) + math.pow(listaProximo[4]-projEsquerdo[1], 2))
+        #define a distância 
+        testeDistDireito = math.sqrt(math.pow((SB_Z_prx-projDireito[0]), 2) + math.pow(SB_X_prx-projDireito[1], 2))
+        testeDistEsquerdo = math.sqrt(math.pow((SB_Z_prx-projEsquerdo[0]), 2) + math.pow(SB_X_prx-projEsquerdo[1], 2))
 
-    ankleRight.append(testeDistDireito-listaAtual[5])
-    ankleLeft.append(testeDistEsquerdo-listaAtual[5])
+        moduloReta = math.sqrt(math.pow(vetorReta[0],2) + math.pow(vetorReta[1], 2))
 
+        ankleRight.append(testeDistDireito-SB_Z_prx)
+        ankleLeft.append(testeDistEsquerdo-SB_Z_prx)
+    else:
+        ankleRight.append(0)
+        ankleLeft.append(0)
     
-    #if (testeDistDireito<testeDistEsquerdo): # Pe direito na frente
-    #    ankleRight.append(distDireito)
-    #    ankleLeft.append(distEsquerdo)
-    #else:                               #Pe esquerdo na frente
-    #    ankleRight.append(distDireito)
-    #    ankleLeft.append(distEsquerdo)
     return distanciaPasso
 
 # Acima dessa linha são apenas funções
+listaPontos = []
 
 #AR_X, AR_Z, AL_X, AL_Z, SB_X, SB_Z, tempoAtual (ordem dos dados na linha)
-arquivo = open("C:\\Users\\VOXAR\\Documents\\BodyBasics-WPF\\joints.txt", 'r')
-listaPontos = arquivo.readlines() # Ler arquivo com os pontos das juntas anlkes e spine base
+#arquivo = open("C:\\Users\\VOXAR\\Documents\\BodyBasics-WPF\\joints.txt", 'r')
+#listaPontos = arquivo.readlines() # Ler arquivo com os pontos das juntas anlkes e spine base
 
-listaEuclidiana = []        # Lista de distancias
+listaEuclidiana = []        # Lista de distancias euclidianas
 listaIndice = []            # Lista de indices com as maximas distâncias entre os pés
 listaDistance = []          # Lista com os tamanhos dos passos em todos os momentos
 tamanhoPassos = []          # Lista com tamanho dos passos em maxima distancia
 ankleRight = []             # Lista com as distancias do calcanhar direito para spine base
 ankleLeft = []              # Lista com as distancias do calcanhar esquerdo para spine base
-tempoAtual = []
-velocidadePasso = []
+tempoAtual = []             # Lista de tempos de cada acontecimento
 listaTempos = []
 ankleRPlot = []
 ankleLPlot = []
 somaVelocidades = 0
 tamTotal = 0                             # Tamanho da soma de todos os passos
 
-listaPontos = create_list(listaPontos)   # Criar a lista (matriz) com os pontos das juntas
+#listaPontos = create_list(listaPontos)   # Criar a lista (matriz) com os pontos das juntas
+create_list2(18, 14, 0)                  # Para usar com o txt de zé
 list_euclidiana(listaPontos)             # Criar a lista com as distâncias dos pontos anteriores
 
-lenEuclidiana = len(listaEuclidiana) - 1   # Tamanho da lista distancias
+lenEuclidiana = len(listaEuclidiana) - 1    # Tamanho da lista distancias
 
 # Criando a lista de distancias euclidianas, para todos os pontos
 for i in range(lenEuclidiana):
-    tam = tamanho_passo(listaPontos[i], listaPontos[i+1], 1)
+    tam = tamanho_passo(listaPontos[i], listaPontos[i+1])
     listaDistance.append(tam)
 
 for i in range(QTDFILTRO):
@@ -150,32 +206,29 @@ i = 1
 for i in range(lenMaximos):
     indice = listaIndice[i]
     tamTotal += listaDistance[indice]
-    print(listaIndice[i])
-    ankleRPlot.append(ankleRight[indice])
-    ankleLPlot.append(ankleLeft[indice])
     tamanhoPassos.append(listaDistance[indice])       #Adicionando os tamanhos dos passos na lista
 
 for i in range(lenMaximos-1):
     indice1 = listaIndice[i]          #Guardando o ponto de máximo em i
     indice2 = listaIndice[i + 1]
-    tempo = tempoAtual[indice2]-tempoAtual[indice1]
-    listaTempos.append(tempo)
-    tempoTotal += tempo
+    #tempo = tempoAtual[indice2]-tempoAtual[indice1]
+    #listaTempos.append(tempo)
+    #tempoTotal += tempo
 
 
 # Printar a lista de tamanhos e o tamanho médio do passo
 tamMedio = tamTotal/(lenMaximos-1) # Tamanho médio dos passos
-velocidadeMedia = tamTotal/tempoTotal
+#velocidadeMedia = tamTotal/tempoTotal
 
 print("Tamanho medio: %f" %tamMedio)
-print("velocidade media: %f" %velocidadeMedia)
+#print("velocidade media: %f" %velocidadeMedia)
 print("distancia total: %f" %tamTotal)
-print("tempo total: %f" %tempoTotal)
+#print("tempo total: %f" %tempoTotal)
 print(tamanhoPassos)
 #print(ankleRight)
 #print(ankleLeft)
 
-arquivo.close() #Fechar arquivo
+#arquivo.close() #Fechar arquivo
 
 listaEuclidiana.pop()
 
@@ -187,10 +240,10 @@ for i in range(QTDFILTRO):
 
 # Plotar gráfico
 plt.figure(figsize=(10,7))
-plt.plot(tempoAtual, listaDistance, color = "blue", label = "Dist Passo")
-plt.plot(tempoAtual, listaEuclidiana, color = "orange", label = "Dist Euclidiana")
-plt.plot(tempoAtual, ankleRight, color = "red", label = "Ankle Right")
-plt.plot(tempoAtual, ankleLeft, color = "green", label = "Ankle Left")
+plt.plot(listaDistance, color = "blue", label = "Dist Passo")
+plt.plot(listaEuclidiana, color = "orange", label = "Dist Euclidiana")
+plt.plot(ankleRight, color = "red", label = "Ankle Right")
+plt.plot(ankleLeft, color = "green", label = "Ankle Left")
 plt.xlabel('tempo(s)')
 plt.ylabel('distance(m)')
 plt.grid(True)
@@ -198,6 +251,3 @@ plt.legend()
 plt.title("Distance")
 plt.savefig('C:\\Users\\VOXAR\\Documents\\BodyBasics-WPF\\grafico.png')
 plt.show()
-plt.plot(ankleRPlot, color = "red", label = "Ankle Right")
-plt.plot(ankleLPlot, color = "green", label = "Ankle Left")
-#plt.show()
