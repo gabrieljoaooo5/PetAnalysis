@@ -24,7 +24,7 @@ def create_list(listaPontos):
     return lista
 
 def create_list2(ar, al, sb):
-    with open("C:\\Users\\VOXAR\\Documents\\BodyBasics-WPF\\joints.txt") as file:
+    with open("C:\\Users\\VOXAR\\Documents\\BodyBasics-WPF\\grafico-test\\twokinect-data.txt") as file:
         for line in file:
             line = line.split('\n')
             line = line[0].split(' ')
@@ -41,13 +41,16 @@ def create_list2(ar, al, sb):
                 linha[i] = linha[i].replace(',', '.')
                 linha[i] = float(linha[i])
 
-            if (len(linha) == 6): 
-                listaPontos.append(linha)
+            if (len(linha) == 6):
+                if (len(listaPontos) > 0):
+                    if (linha != listaPontos[len(listaPontos) - 1]):
+                        listaPontos.append(linha)
+                else: listaPontos.append(linha)
 
     file.close()
 
 def list_euclidiana(listaPontos):
-    num_linhas = len(listaPontos)-1 
+    num_linhas = len(listaPontos)
     for i in range(num_linhas):
         dist = distance(listaPontos[i][0], listaPontos[i][1], listaPontos[i][2], listaPontos[i][3])
         listaEuclidiana.append(dist)
@@ -82,22 +85,22 @@ def min_max_graph(listaDistance):
         
         if(isMaxPoint):
             listaIndice.append(i)
-            qtdPassos += 1
 
-    i = 1
+    i = 0
     tamTotal = 0
-    for i in range(len(listaIndice)):
-        indice = listaIndice[i]
-        tamTotal += listaDistance[indice]
+    for i in range(len(listaDistance)):
+        #indice = listaIndice[i]
+        #if (listaDistance[indice] < 0.9):
+        tamTotal += listaDistance[i]
 
-    tamMedio = tamTotal/(len(listaIndice))
+    tamMedio = tamTotal/(len(listaDistance))
     print(tamMedio)
 
     i = 1
     lista = []
     for i in range(len(listaIndice)):
         indice = listaIndice[i]
-        if(listaDistance[indice] < 0.80*tamMedio or listaDistance[indice] >= 1.45*tamMedio):
+        if(listaDistance[indice] <= 0.50*tamMedio or listaDistance[indice] >= 1.50*tamMedio):
             lista.append(i)
 
     for i in range(len(lista)):
@@ -107,7 +110,7 @@ def min_max_graph(listaDistance):
         for j in range(len(lista)):
             lista[j] -= 1
     
-    qtdPassos = len(listaIndice)
+    qtdPassos = len(listaIndice)-1
     print("quantidade de passos: %d" %qtdPassos)
     print(listaIndice)
 
@@ -134,31 +137,27 @@ def tamanho_passo(listaAtual, listaProximo):
     vetorPeDireito = [AR_Z_at-SB_Z_at, AR_X_at-SB_X_at]
     vetorPeEsquerdo = [AL_Z_at-SB_Z_at, AL_X_at-SB_X_at]
 
-    if(vetorReta[0] != 0 or vetorReta[1] != 0):
-        #projecao pe direito sobre a reta da frente (spine base)
-        coef = ((vetorPeDireito[0]*vetorReta[0])+(vetorPeDireito[1]*vetorReta[1]))/((vetorReta[0]*vetorReta[0])+(vetorReta[1]*vetorReta[1]))
-        projDireito = [coef*vetorReta[0], coef*vetorReta[1]]        
-        distDireito = math.sqrt(projDireito[0]*projDireito[0] + projDireito[1]*projDireito[1])
+    #projecao pe direito sobre a reta da frente (spine base)
+    coef = ((vetorPeDireito[0]*vetorReta[0])+(vetorPeDireito[1]*vetorReta[1]))/((vetorReta[0]*vetorReta[0])+(vetorReta[1]*vetorReta[1]))
+    projDireito = [coef*vetorReta[0], coef*vetorReta[1]]        
+    distDireito = math.sqrt(projDireito[0]*projDireito[0] + projDireito[1]*projDireito[1])
 
-        #projecao do pe esquerdo sobre a reta da frente (spine base)
-        coef = ((vetorPeEsquerdo[0]*vetorReta[0])+(vetorPeEsquerdo[1]*vetorReta[1]))/((vetorReta[0]*vetorReta[0])+(vetorReta[1]*vetorReta[1]))
-        projEsquerdo = [coef*vetorReta[0], coef*vetorReta[1]]
-        distEsquerdo = math.sqrt(projEsquerdo[0]*projEsquerdo[0] + projEsquerdo[1]*projEsquerdo[1])
+    #projecao do pe esquerdo sobre a reta da frente (spine base)
+    coef = ((vetorPeEsquerdo[0]*vetorReta[0])+(vetorPeEsquerdo[1]*vetorReta[1]))/((vetorReta[0]*vetorReta[0])+(vetorReta[1]*vetorReta[1]))
+    projEsquerdo = [coef*vetorReta[0], coef*vetorReta[1]]
+    distEsquerdo = math.sqrt(projEsquerdo[0]*projEsquerdo[0] + projEsquerdo[1]*projEsquerdo[1])
 
-        #o tamanho do passo = soma do tamanho dos dois passos
-        distanciaPasso = distDireito + distEsquerdo
+    #o tamanho do passo = soma do tamanho dos dois passos
+    distanciaPasso = distDireito + distEsquerdo
 
-        #define a distância 
-        testeDistDireito = math.sqrt(math.pow((SB_Z_prx-projDireito[0]), 2) + math.pow(SB_X_prx-projDireito[1], 2))
-        testeDistEsquerdo = math.sqrt(math.pow((SB_Z_prx-projEsquerdo[0]), 2) + math.pow(SB_X_prx-projEsquerdo[1], 2))
+    #define a distância 
+    testeDistDireito = math.sqrt(math.pow((SB_Z_prx-projDireito[0]), 2) + math.pow(SB_X_prx-projDireito[1], 2))
+    testeDistEsquerdo = math.sqrt(math.pow((SB_Z_prx-projEsquerdo[0]), 2) + math.pow(SB_X_prx-projEsquerdo[1], 2))
 
-        moduloReta = math.sqrt(math.pow(vetorReta[0],2) + math.pow(vetorReta[1], 2))
+    moduloReta = math.sqrt(math.pow(vetorReta[0],2) + math.pow(vetorReta[1], 2))
 
-        ankleRight.append(testeDistDireito-SB_Z_prx)
-        ankleLeft.append(testeDistEsquerdo-SB_Z_prx)
-    else:
-        ankleRight.append(0)
-        ankleLeft.append(0)
+    ankleRight.append(testeDistDireito-SB_Z_prx)
+    ankleLeft.append(testeDistEsquerdo-SB_Z_prx)
     
     return distanciaPasso
 
@@ -186,7 +185,7 @@ tamTotal = 0                             # Tamanho da soma de todos os passos
 create_list2(18, 14, 0)                  # Para usar com o txt de zé
 list_euclidiana(listaPontos)             # Criar a lista com as distâncias dos pontos anteriores
 
-lenEuclidiana = len(listaEuclidiana) - 1    # Tamanho da lista distancias
+lenEuclidiana = len(listaEuclidiana) - 1 # Tamanho da lista distancias
 
 # Criando a lista de distancias euclidianas, para todos os pontos
 for i in range(lenEuclidiana):
@@ -244,7 +243,7 @@ plt.plot(listaDistance, color = "blue", label = "Dist Passo")
 plt.plot(listaEuclidiana, color = "orange", label = "Dist Euclidiana")
 plt.plot(ankleRight, color = "red", label = "Ankle Right")
 plt.plot(ankleLeft, color = "green", label = "Ankle Left")
-plt.xlabel('tempo(s)')
+plt.xlabel('frame')
 plt.ylabel('distance(m)')
 plt.grid(True)
 plt.legend()
