@@ -24,7 +24,7 @@ def create_list(listaPontos):
     return lista
 
 def create_list2(ar, al, sb):
-    with open("C:\\Users\\VOXAR\\Documents\\BodyBasics-WPF\\grafico-test\\twokinect-data.txt") as file:
+    with open("C:\\Users\\VOXAR\\Documents\\BodyBasics-WPF\\grafico-test\\netkinect-data.txt") as file:
         for line in file:
             line = line.split('\n')
             line = line[0].split(' ')
@@ -50,7 +50,9 @@ def create_list2(ar, al, sb):
     file.close()
 
 def list_euclidiana(listaPontos):
+    #num_linhas = len(listaPontos)-1 se for txt antigo
     num_linhas = len(listaPontos)
+
     for i in range(num_linhas):
         dist = distance(listaPontos[i][0], listaPontos[i][1], listaPontos[i][2], listaPontos[i][3])
         listaEuclidiana.append(dist)
@@ -86,21 +88,16 @@ def min_max_graph(listaDistance):
         if(isMaxPoint):
             listaIndice.append(i)
 
-    i = 0
     tamTotal = 0
     for i in range(len(listaDistance)):
-        #indice = listaIndice[i]
-        #if (listaDistance[indice] < 0.9):
         tamTotal += listaDistance[i]
 
     tamMedio = tamTotal/(len(listaDistance))
-    print(tamMedio)
 
-    i = 1
     lista = []
     for i in range(len(listaIndice)):
         indice = listaIndice[i]
-        if(listaDistance[indice] <= 0.50*tamMedio or listaDistance[indice] >= 1.50*tamMedio):
+        if(listaDistance[indice] <= 0.55*tamMedio or listaDistance[indice] >= 1.45*tamMedio):
             lista.append(i)
 
     for i in range(len(lista)):
@@ -110,9 +107,10 @@ def min_max_graph(listaDistance):
         for j in range(len(lista)):
             lista[j] -= 1
     
-    qtdPassos = len(listaIndice)-1
-    print("quantidade de passos: %d" %qtdPassos)
+    print("quantidade de passos: %d" %(len(listaIndice)))
     print(listaIndice)
+    return len(listaIndice)
+
 
 #  0  ,  1  ,  2  ,  3  ,  4  ,  5
 #AR_X, AR_Z, AL_X, AL_Z, SB_X, SB_Z (ordem)
@@ -161,11 +159,25 @@ def tamanho_passo(listaAtual, listaProximo):
     
     return distanciaPasso
 
+def delete(list):
+    tamTotal = 0
+    listHelp = []
+    for i in range(len(list)):
+        tamTotal += list[i]
+
+    tamMedio = tamTotal/(len(list))
+
+    for i in range (len(list)):
+        if (list[i] <= 1.8*tamMedio and list[i] >= 0.2*tamMedio):
+            listHelp.append(list[i])
+
+    return listHelp
+
 # Acima dessa linha são apenas funções
 listaPontos = []
 
 #AR_X, AR_Z, AL_X, AL_Z, SB_X, SB_Z, tempoAtual (ordem dos dados na linha)
-#arquivo = open("C:\\Users\\VOXAR\\Documents\\BodyBasics-WPF\\joints.txt", 'r')
+#arquivo = open("C:\\Users\\VOXAR\\Documents\\BodyBasics-WPF\\grafico-test\\joints(alexandre8).txt", 'r')
 #listaPontos = arquivo.readlines() # Ler arquivo com os pontos das juntas anlkes e spine base
 
 listaEuclidiana = []        # Lista de distancias euclidianas
@@ -195,7 +207,7 @@ for i in range(lenEuclidiana):
 for i in range(QTDFILTRO):
     listaDistance = signal.wiener(listaDistance)
 
-min_max_graph(listaDistance)            # Saber quais os indices de maximo e minimo, e contar passos
+qtdPassos = min_max_graph(listaDistance)            # Saber quais os indices de maximo e minimo, e contar passos
 lenMaximos = len(listaIndice)           # Tamanho da lista de indices
 tamMedio = 0
 tempoTotal = 0
@@ -217,11 +229,12 @@ for i in range(lenMaximos-1):
 
 # Printar a lista de tamanhos e o tamanho médio do passo
 tamMedio = tamTotal/(lenMaximos-1) # Tamanho médio dos passos
+distTotal = qtdPassos*tamMedio
 #velocidadeMedia = tamTotal/tempoTotal
 
 print("Tamanho medio: %f" %tamMedio)
 #print("velocidade media: %f" %velocidadeMedia)
-print("distancia total: %f" %tamTotal)
+print("distancia total: %f" %distTotal)
 #print("tempo total: %f" %tempoTotal)
 print(tamanhoPassos)
 #print(ankleRight)
